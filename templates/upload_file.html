@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GesturePresent · Upload file</title>
+    <!-- Font Awesome for subtle icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+
+        body {
+            min-height: 100vh;
+            background: radial-gradient(circle at 20% 30%, #0b0f1c, #03050b);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1.5rem;
+        }
+
+        /* main card – split layout */
+        .auth-container {
+            display: flex;
+            max-width: 1000px;
+            width: 100%;
+            background: rgba(18, 22, 33, 0.85);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(90, 150, 255, 0.2);
+            border-radius: 2.5rem;
+            box-shadow: 0 30px 50px -20px rgba(0, 0, 0, 0.9), 0 0 0 1px rgba(0, 255, 255, 0.05) inset;
+            overflow: hidden;
+            transition: all 0.3s;
+        }
+
+        /* LEFT SIDE – brand / gesture flair */
+        .gesture-brand {
+            flex: 1 1 40%;
+            background: linear-gradient(145deg, #0b121f, #060a12);
+            padding: 2.5rem 2rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            border-right: 1px solid rgba(0, 255, 255, 0.1);
+            position: relative;
+            isolation: isolate;
+        }
+
+        .gesture-brand::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(circle at 30% 40%, rgba(0, 255, 200, 0.08), transparent 70%);
+            z-index: -1;
+        }
+
+        .brand-header {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .brand-icon {
+            font-size: 2.2rem;
+            filter: drop-shadow(0 0 8px #00e0ff);
+            color: #a0f0ff;
+        }
+
+        .brand-header h1 {
+            font-size: 1.8rem;
+            font-weight: 600;
+            letter-spacing: -0.5px;
+            color: #fff;
+        }
+
+        .brand-header span {
+            color: #3ee0ff;
+            font-weight: 300;
+        }
+
+        .gesture-visual {
+            margin: 3rem 0;
+            text-align: center;
+            font-size: 4rem;
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            color: #b0e6ff;
+            opacity: 0.85;
+        }
+
+        .gesture-visual i {
+            filter: drop-shadow(0 0 15px #00c8ff);
+            animation: float 3s infinite alternate ease-in-out;
+        }
+
+        .gesture-visual i:nth-child(2) {
+            animation-delay: 0.5s;
+        }
+
+        .gesture-visual i:nth-child(3) {
+            animation-delay: 1s;
+        }
+
+        @keyframes float {
+            0% { transform: translateY(0); }
+            100% { transform: translateY(-8px); }
+        }
+
+        .brand-tagline {
+            color: #a0b8d0;
+            font-size: 0.95rem;
+            line-height: 1.6;
+            border-left: 3px solid #00e0ff;
+            padding-left: 1rem;
+            margin-top: auto;
+            font-weight: 300;
+        }
+
+        .brand-tagline i {
+            color: #00e0ff;
+            margin-right: 6px;
+        }
+
+        /* RIGHT SIDE – forms (login/register toggle) */
+        .forms-panel {
+            flex: 1 1 60%;
+            padding: 2.8rem 2.5rem;
+            background: rgba(10, 15, 24, 0.7);
+            backdrop-filter: blur(10px);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 2rem;
+            margin-bottom: 2.2rem;
+            border-bottom: 1px solid rgba(70, 130, 200, 0.3);
+            padding-bottom: 0.5rem;
+        }
+
+        .tab-btn {
+            background: transparent;
+            border: none;
+            font-size: 1.2rem;
+            font-weight: 500;
+            color: #7f8fa0;
+            padding: 0.4rem 0;
+            cursor: pointer;
+            transition: 0.2s;
+            letter-spacing: -0.2px;
+            position: relative;
+        }
+
+        .tab-btn.active {
+            color: #fff;
+        }
+
+        .tab-btn.active::after {
+            content: '';
+            position: absolute;
+            bottom: -0.6rem;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background: linear-gradient(90deg, #00e0ff, #3a8cff);
+            border-radius: 2px;
+            box-shadow: 0 0 10px #00c8ff;
+        }
+
+        .auth-form {
+            display: none;
+            flex-direction: column;
+            gap: 1.2rem;
+            animation: fadeIn 0.25s ease;
+        }
+
+        .auth-form.active-form {
+            display: flex;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0.4; transform: translateY(4px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.4rem;
+        }
+
+        .input-group label {
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: #a0b5cc;
+            font-weight: 500;
+        }
+
+        .input-field {
+            display: flex;
+            align-items: center;
+            background: #111a26;
+            border: 1px solid #253241;
+            border-radius: 1rem;
+            padding: 0.1rem 0.1rem 0.1rem 1rem;
+            transition: 0.2s;
+        }
+
+        .input-field:focus-within {
+            border-color: #00c8ff;
+            box-shadow: 0 0 0 3px rgba(0, 200, 255, 0.1);
+        }
+
+        .input-field i {
+            color: #3d5a73;
+            font-size: 1rem;
+            width: 1.6rem;
+        }
+
+        .input-field input {
+            width: 100%;
+            background: transparent;
+            border: none;
+            padding: 0.85rem 1rem 0.85rem 0.4rem;
+            font-size: 0.95rem;
+            color: #eef5ff;
+            outline: none;
+        }
+
+        .input-field input::placeholder {
+            color: #40566e;
+            font-weight: 300;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #0066ff, #00b8ff);
+            border: none;
+            border-radius: 3rem;
+            padding: 0.9rem 1.8rem;
+            font-weight: 600;
+            font-size: 1rem;
+            color: #fff;
+            cursor: pointer;
+            transition: 0.2s;
+            box-shadow: 0 8px 20px -8px #0066ff80, 0 0 0 1px rgba(0, 255, 255, 0.2) inset;
+            letter-spacing: 0.3px;
+            margin-top: 0.4rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .btn-primary i {
+            font-size: 1rem;
+            transition: transform 0.2s;
+        }
+
+        .btn-primary:hover {
+            background: linear-gradient(135deg, #1a7aff, #1ac8ff);
+            transform: scale(1.01);
+            box-shadow: 0 12px 28px -10px #00a6ff;
+        }
+
+        .btn-primary:hover i {
+            transform: translateX(4px);
+        }
+
+        .form-footer {
+            margin-top: 0.8rem;
+            font-size: 0.9rem;
+            color: #7f96b0;
+            text-align: center;
+        }
+
+        .form-footer a {
+            color: #3ee0ff;
+            text-decoration: none;
+            font-weight: 500;
+            transition: 0.2s;
+            cursor: pointer;
+            margin-left: 4px;
+        }
+
+        .form-footer a:hover {
+            text-decoration: underline;
+            text-shadow: 0 0 6px #00c8ff;
+        }
+
+        .register-link-in-login {
+            display: inline-block;
+        }
+
+        /* small responsive */
+        @media (max-width: 720px) {
+            .auth-container {
+                flex-direction: column;
+                border-radius: 2rem;
+            }
+
+            .gesture-brand {
+                border-right: none;
+                border-bottom: 1px solid rgba(0, 255, 255, 0.1);
+                padding: 1.8rem;
+                flex-direction: row;
+                align-items: center;
+                justify-content: space-between;
+                flex-wrap: wrap;
+            }
+
+            .gesture-visual {
+                display: none;
+            }
+
+            .brand-tagline {
+                margin-top: 0.5rem;
+                width: 100%;
+                font-size: 0.85rem;
+            }
+
+            .brand-header h1 {
+                font-size: 1.5rem;
+            }
+
+            .forms-panel {
+                padding: 2rem 1.5rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .tabs {
+                gap: 1.2rem;
+            }
+            .tab-btn {
+                font-size: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="auth-container">
+    <!-- LEFT: Brand / hand gesture motif -->
+    <div class="gesture-brand">
+        <div class="brand-header">
+            <i class="fas fa-hand-peace brand-icon"></i>
+            <h1>Gesture<span>Present</span></h1>
+        </div>
+
+        <div class="gesture-visual">
+            <i class="fas fa-hand-peace"></i>
+            <i class="fas fa-hand-pointer"></i>
+            <i class="fas fa-hand-sparkles"></i>
+        </div>
+
+        <div class="brand-tagline">
+            <i class="fas fa-wifi"></i> Control presentations with a wave — no clicker, no touch.
+        </div>
+    </div>
+
+    <!-- RIGHT: Login & Register forms -->
+    <div class="forms-panel">
+        <!--&lt;!&ndash; Tab switcher &ndash;&gt;-->
+        <!--<div class="tabs">-->
+            <!--<button class="tab-btn active" id="tabRegisterBtn" data-form="register">Register</button>-->
+        <!--</div>-->
+
+        <!-- REGISTRATION FORM -->
+        <form id="registerForm" class="auth-form active-form" action="/upload_ppt_post" method="post" enctype="multipart/form-data">
+
+            <div class="input-group">
+                <label>Choose your presentation file</label>
+                <div class="input-field">
+                    <i class="fas fa-file-powerpoint"></i>
+                    <input type="file" placeholder="Choose slide" name="slide">
+                </div>
+            </div>
+
+            <button type="submit" class="btn-primary">
+                <i class="fas fa-user-plus"></i> Start slideshow
+            </button>
+
+            <div class="form-footer">
+                <a href="/user_home" id="gotoLoginLink">Back to home</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Tab switching logic + register/login links -->
+<script>
+    (function() {
+        const tabLoginBtn = document.getElementById('tabLoginBtn');
+        const tabRegisterBtn = document.getElementById('tabRegisterBtn');
+        const loginForm = document.getElementById('loginForm');
+        const registerForm = document.getElementById('registerForm');
+        const gotoRegisterLink = document.getElementById('gotoRegisterLink');
+        const gotoLoginLink = document.getElementById('gotoLoginLink');
+
+        // Function to switch to login view
+        function showLogin() {
+            tabLoginBtn.classList.add('active');
+            tabRegisterBtn.classList.remove('active');
+            loginForm.classList.add('active-form');
+            registerForm.classList.remove('active-form');
+        }
+
+        // Function to switch to register view
+        function showRegister() {
+            tabRegisterBtn.classList.add('active');
+            tabLoginBtn.classList.remove('active');
+            registerForm.classList.add('active-form');
+            loginForm.classList.remove('active-form');
+        }
+
+        // event listeners on tabs
+        tabLoginBtn.addEventListener('click', showLogin);
+        tabRegisterBtn.addEventListener('click', showRegister);
+
+        // "Register now" link inside login form -> goes to register
+        if (gotoRegisterLink) {
+            gotoRegisterLink.addEventListener('click', function(e) {
+                e.preventDefault();
+                showRegister();
+            });
+        }
+
+        // "Sign in" link inside register form -> goes to login
+        if (gotoLoginLink) {
+            gotoLoginLink.addEventListener('click', function(e) {
+                e.preventDefault();
+                showLogin();
+            });
+        }
+
+    })();
+</script>
+
+</body>
+</html>

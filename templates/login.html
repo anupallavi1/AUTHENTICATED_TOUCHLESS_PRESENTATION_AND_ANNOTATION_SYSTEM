@@ -1,0 +1,847 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GesturePresent · Login & Register</title>
+    <!-- Font Awesome for subtle icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+
+        body {
+            min-height: 100vh;
+            background: radial-gradient(circle at 20% 30%, #0b0f1c, #03050b);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1.5rem;
+        }
+
+        /* main card – split layout */
+        .auth-container {
+            display: flex;
+            max-width: 1000px;
+            width: 100%;
+            background: rgba(18, 22, 33, 0.85);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(90, 150, 255, 0.2);
+            border-radius: 2.5rem;
+            box-shadow: 0 30px 50px -20px rgba(0, 0, 0, 0.9), 0 0 0 1px rgba(0, 255, 255, 0.05) inset;
+            overflow: hidden;
+            transition: all 0.3s;
+        }
+
+        /* LEFT SIDE – brand / gesture flair */
+        .gesture-brand {
+            flex: 1 1 40%;
+            background: linear-gradient(145deg, #0b121f, #060a12);
+            padding: 2.5rem 2rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            border-right: 1px solid rgba(0, 255, 255, 0.1);
+            position: relative;
+            isolation: isolate;
+        }
+
+        .gesture-brand::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(circle at 30% 40%, rgba(0, 255, 200, 0.08), transparent 70%);
+            z-index: -1;
+        }
+
+        .camera-title {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            color: #fff;
+            font-size: 1.15rem;
+            font-weight: 600;
+        }
+
+        .camera-title i {
+            color: #3ee0ff;
+            filter: drop-shadow(0 0 6px #00e0ff);
+        }
+
+        .camera-frame {
+            position: relative;
+            margin: 1.5rem 0;
+            width: 100%;
+            aspect-ratio: 4 / 3;
+            border-radius: 1.5rem;
+            overflow: hidden;
+            background: #02050a;
+            border: 1px solid rgba(0, 224, 255, 0.25);
+            box-shadow: 0 0 25px -8px rgba(0, 200, 255, 0.5);
+        }
+
+        .camera-frame video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transform: scaleX(-1);          /* mirror, like looking in a mirror */
+            display: block;
+        }
+
+        /* Oval guide: keep your face inside it */
+        .face-guide {
+            position: absolute;
+            left: 50%;
+            top: 47%;
+            width: 42%;
+            height: 68%;
+            transform: translate(-50%, -50%);
+            border: 2px dashed rgba(62, 224, 255, 0.75);
+            border-radius: 50%;
+            box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.25);
+            pointer-events: none;
+        }
+
+        .camera-overlay {
+            position: absolute;
+            inset: 0;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 0.8rem;
+            padding: 1rem;
+            text-align: center;
+            color: #a0b8d0;
+            font-size: 0.9rem;
+            background: #060a12;
+        }
+
+        .camera-overlay.show {
+            display: flex;
+        }
+
+        .camera-overlay i {
+            font-size: 2.2rem;
+            color: #3d5a73;
+        }
+
+        .camera-overlay button {
+            background: transparent;
+            border: 1px solid #00c8ff;
+            color: #3ee0ff;
+            border-radius: 2rem;
+            padding: 0.45rem 1.2rem;
+            cursor: pointer;
+        }
+
+        .camera-status {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: #a0b8d0;
+            font-size: 0.85rem;
+        }
+
+        .status-dot {
+            width: 9px;
+            height: 9px;
+            border-radius: 50%;
+            background: #7f8fa0;
+            flex-shrink: 0;
+        }
+
+        .status-dot.live {
+            background: #ff3b5c;
+            box-shadow: 0 0 8px #ff3b5c;
+            animation: blink 1.4s infinite;
+        }
+
+        @keyframes blink {
+            50% { opacity: 0.35; }
+        }
+
+        .camera-frame img.captured-full {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transform: scaleX(-1);
+            display: none;
+            z-index: 2;             /* above the 'camera off' overlay */
+        }
+
+        .camera-frame.show-captured img.captured-full {
+            display: block;
+        }
+
+        .camera-frame.show-captured .face-guide {
+            display: none;
+        }
+
+        .captured-badge {
+            position: absolute;
+            top: 0.7rem;
+            left: 0.7rem;
+            background: rgba(0, 0, 0, 0.65);
+            color: #3ee0ff;
+            font-size: 0.75rem;
+            padding: 0.25rem 0.7rem;
+            border-radius: 1rem;
+            display: none;
+            z-index: 3;
+        }
+
+        .camera-frame.show-captured .captured-badge {
+            display: block;
+        }
+
+        .captured-strip {
+            display: none;
+            align-items: center;
+            gap: 0.8rem;
+            margin-top: 1rem;
+            padding: 0.6rem;
+            background: rgba(17, 26, 38, 0.8);
+            border: 1px solid #253241;
+            border-radius: 1rem;
+        }
+
+        .captured-strip.show {
+            display: flex;
+        }
+
+        .captured-strip img {
+            width: 72px;
+            height: 54px;
+            object-fit: cover;
+            transform: scaleX(-1);
+            border-radius: 0.5rem;
+            border: 1px solid rgba(0, 224, 255, 0.35);
+            cursor: pointer;
+            flex-shrink: 0;
+        }
+
+        .captured-info {
+            flex: 1;
+            min-width: 0;
+            color: #a0b8d0;
+            font-size: 0.8rem;
+            line-height: 1.4;
+        }
+
+        .captured-info strong {
+            display: block;
+            color: #eef5ff;
+            font-weight: 500;
+        }
+
+        .captured-strip button {
+            background: transparent;
+            border: 1px solid #00c8ff;
+            color: #3ee0ff;
+            border-radius: 2rem;
+            padding: 0.35rem 0.8rem;
+            font-size: 0.78rem;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+
+        .camera-tips {
+            color: #a0b8d0;
+            font-size: 0.88rem;
+            line-height: 1.6;
+            border-left: 3px solid #00e0ff;
+            padding-left: 1rem;
+            margin-top: 1rem;
+            font-weight: 300;
+        }
+
+        .side-section[hidden] {
+            display: none;
+        }
+
+        .tips-list {
+            list-style: none;
+            margin-top: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1.1rem;
+        }
+
+        .tips-list li {
+            display: flex;
+            gap: 0.9rem;
+            color: #a0b8d0;
+            font-size: 0.85rem;
+            line-height: 1.5;
+        }
+
+        .tips-list li i {
+            color: #3ee0ff;
+            width: 1.3rem;
+            padding-top: 0.2rem;
+            text-align: center;
+            flex-shrink: 0;
+        }
+
+        .tips-list li strong {
+            display: block;
+            color: #eef5ff;
+            font-weight: 500;
+        }
+
+        /* RIGHT SIDE – forms (login/register toggle) */
+        .forms-panel {
+            flex: 1 1 60%;
+            padding: 2.8rem 2.5rem;
+            background: rgba(10, 15, 24, 0.7);
+            backdrop-filter: blur(10px);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 2rem;
+            margin-bottom: 2.2rem;
+            border-bottom: 1px solid rgba(70, 130, 200, 0.3);
+            padding-bottom: 0.5rem;
+        }
+
+        .tab-btn {
+            background: transparent;
+            border: none;
+            font-size: 1.2rem;
+            font-weight: 500;
+            color: #7f8fa0;
+            padding: 0.4rem 0;
+            cursor: pointer;
+            transition: 0.2s;
+            letter-spacing: -0.2px;
+            position: relative;
+        }
+
+        .tab-btn.active {
+            color: #fff;
+        }
+
+        .tab-btn.active::after {
+            content: '';
+            position: absolute;
+            bottom: -0.6rem;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background: linear-gradient(90deg, #00e0ff, #3a8cff);
+            border-radius: 2px;
+            box-shadow: 0 0 10px #00c8ff;
+        }
+
+        .auth-form {
+            display: none;
+            flex-direction: column;
+            gap: 1.2rem;
+            animation: fadeIn 0.25s ease;
+        }
+
+        .auth-form.active-form {
+            display: flex;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0.4; transform: translateY(4px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.4rem;
+        }
+
+        .input-group label {
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: #a0b5cc;
+            font-weight: 500;
+        }
+
+        .input-field {
+            display: flex;
+            align-items: center;
+            background: #111a26;
+            border: 1px solid #253241;
+            border-radius: 1rem;
+            padding: 0.1rem 0.1rem 0.1rem 1rem;
+            transition: 0.2s;
+        }
+
+        .input-field:focus-within {
+            border-color: #00c8ff;
+            box-shadow: 0 0 0 3px rgba(0, 200, 255, 0.1);
+        }
+
+        .input-field i {
+            color: #3d5a73;
+            font-size: 1rem;
+            width: 1.6rem;
+        }
+
+        .input-field input {
+            width: 100%;
+            background: transparent;
+            border: none;
+            padding: 0.85rem 1rem 0.85rem 0.4rem;
+            font-size: 0.95rem;
+            color: #eef5ff;
+            outline: none;
+        }
+
+        .input-field input::placeholder {
+            color: #40566e;
+            font-weight: 300;
+        }
+
+        .field-hint {
+            font-size: 0.75rem;
+            color: #6f86a0;
+            line-height: 1.4;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #0066ff, #00b8ff);
+            border: none;
+            border-radius: 3rem;
+            padding: 0.9rem 1.8rem;
+            font-weight: 600;
+            font-size: 1rem;
+            color: #fff;
+            cursor: pointer;
+            transition: 0.2s;
+            box-shadow: 0 8px 20px -8px #0066ff80, 0 0 0 1px rgba(0, 255, 255, 0.2) inset;
+            letter-spacing: 0.3px;
+            margin-top: 0.4rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .btn-primary i {
+            font-size: 1rem;
+            transition: transform 0.2s;
+        }
+
+        .btn-primary:hover {
+            background: linear-gradient(135deg, #1a7aff, #1ac8ff);
+            transform: scale(1.01);
+            box-shadow: 0 12px 28px -10px #00a6ff;
+        }
+
+        .btn-primary:hover i {
+            transform: translateX(4px);
+        }
+
+        .form-footer {
+            margin-top: 0.8rem;
+            font-size: 0.9rem;
+            color: #7f96b0;
+            text-align: center;
+        }
+
+        .form-footer a {
+            color: #3ee0ff;
+            text-decoration: none;
+            font-weight: 500;
+            transition: 0.2s;
+            cursor: pointer;
+            margin-left: 4px;
+        }
+
+        .form-footer a:hover {
+            text-decoration: underline;
+            text-shadow: 0 0 6px #00c8ff;
+        }
+
+        .register-link-in-login {
+            display: inline-block;
+        }
+
+        /* small responsive */
+        @media (max-width: 720px) {
+            .auth-container {
+                flex-direction: column;
+                border-radius: 2rem;
+            }
+
+            .gesture-brand {
+                border-right: none;
+                border-bottom: 1px solid rgba(0, 255, 255, 0.1);
+                padding: 1.8rem;
+            }
+
+            .camera-frame {
+                margin: 1rem 0;
+            }
+
+            .forms-panel {
+                padding: 2rem 1.5rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .tabs {
+                gap: 1.2rem;
+            }
+            .tab-btn {
+                font-size: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="auth-container">
+    <!-- LEFT: Live camera preview, so the user can position themselves before face verification -->
+    <div class="gesture-brand">
+      <!-- Login tab: camera preview -->
+      <div class="side-section" id="loginSide">
+        <div class="camera-title">
+            <i class="fas fa-video"></i> Camera preview
+        </div>
+
+        <div class="camera-frame">
+            <video id="cameraPreview" autoplay muted playsinline></video>
+            <div class="face-guide"></div>
+            <img class="captured-full" id="capturedFull" alt="Captured image">
+            <span class="captured-badge"><i class="fas fa-camera"></i> Captured image</span>
+            <div class="camera-overlay" id="cameraOverlay">
+                <i class="fas fa-video-slash" id="cameraOverlayIcon"></i>
+                <span id="cameraOverlayText">Starting camera...</span>
+                <button type="button" id="cameraRetry">Try again</button>
+            </div>
+        </div>
+
+        <div class="camera-status">
+            <span class="status-dot" id="statusDot"></span>
+            <span id="cameraStatus">Starting camera...</span>
+        </div>
+
+        <!-- Image taken by the server for the last sign-in (click to view it large) -->
+        <div class="captured-strip" id="capturedStrip">
+            <img id="capturedThumb" alt="Captured image" title="Click to view">
+            <div class="captured-info">
+                <strong>Captured image</strong>
+                <span id="capturedTime"></span>
+            </div>
+            <button type="button" id="capturedToggle">View</button>
+        </div>
+
+        <div class="camera-tips">
+            Keep your face inside the oval, look at the camera and make sure your face is well lit.
+            Your face is checked when you sign in.
+        </div>
+      </div>
+
+      <!-- Register tab: tips -->
+      <div class="side-section" id="registerSide" hidden>
+        <div class="camera-title">
+            <i class="fas fa-lightbulb"></i> Registration tips
+        </div>
+        <ul class="tips-list">
+            <li><i class="fas fa-image"></i>
+                <span><strong>Face photo</strong>
+                Upload a clear, front-facing photo with good lighting. Only one face, no sunglasses, mask or heavy filters. This photo is used to recognise you at sign-in.</span></li>
+            <li><i class="fas fa-microphone"></i>
+                <span><strong>Voice file</strong>
+                Upload your audio with minimum 10 seconds duration. You should input an audio of you reading 2-3 sentences. Only your voice will be able to give voice commands.</span></li>
+            <li><i class="fas fa-lock"></i>
+                <span><strong>Password</strong>
+                Pick something you will remember; you need it every time you sign in.</span></li>
+            <li><i class="fas fa-hourglass-half"></i>
+                <span><strong>Be patient</strong>
+                Analysing your voice takes a few seconds after you press Create account.</span></li>
+        </ul>
+        <div class="camera-tips">
+            After registering, switch to the Login tab: your webcam will be used to verify your face.
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT: Login & Register forms -->
+    <div class="forms-panel">
+        <!-- Tab switcher -->
+        <div class="tabs">
+            <button class="tab-btn active" id="tabLoginBtn" data-form="login">Login</button>
+            <button class="tab-btn" id="tabRegisterBtn" data-form="register">Register</button>
+        </div>
+
+        <!-- LOGIN FORM -->
+        <form id="loginForm" class="auth-form active-form" action="/login_post" method="post" enctype="multipart/form-data">
+            <div class="input-group">
+                <label>Email or Username</label>
+                <div class="input-field">
+                    <i class="fas fa-envelope"></i>
+                    <input type="text" placeholder="you@example.com" name="username" autocomplete="username">
+                </div>
+            </div>
+            <div class="input-group">
+                <label>Password</label>
+                <div class="input-field">
+                    <i class="fas fa-lock"></i>
+                    <input type="password" placeholder="••••••••" name="password" autocomplete="current-password">
+                </div>
+            </div>
+
+            <button type="submit" class="btn-primary">
+                <i class="fas fa-arrow-right-to-bracket"></i> Sign in
+            </button>
+
+            <div class="form-footer">
+                Don't have an account?
+                <a href="#" id="gotoRegisterLink">Register now</a>
+            </div>
+        </form>
+
+        <!-- REGISTRATION FORM -->
+        <form id="registerForm" class="auth-form" action="/register_post" method="post" enctype="multipart/form-data">
+            <div class="input-group">
+                <label>Full name</label>
+                <div class="input-field">
+                    <i class="fas fa-user"></i>
+                    <input type="text" placeholder="Alex Rivera" name="name" autocomplete="name">
+                </div>
+            </div>
+            <div class="input-group">
+                <label>Email address</label>
+                <div class="input-field">
+                    <i class="fas fa-envelope"></i>
+                    <input type="email" placeholder="alex@gesturepresent.io" name="email" autocomplete="email">
+                </div>
+            </div>
+            <div class="input-group">
+                <label>Image</label>
+                <div class="input-field">
+                    <i class="fas fa-image"></i>
+                    <input type="file" placeholder="Choose image" name="image">
+                </div>
+            </div>
+            <div class="input-group">
+                <label>Voice recording (mp3 / wav)</label>
+                <div class="input-field">
+                    <i class="fas fa-microphone"></i>
+                    <input type="file" name="voice" accept=".mp3,.wav,audio/mpeg,audio/wav" required>
+                </div>
+                <span class="field-hint">Read any text aloud for 15-30 seconds, ideally with the same microphone you present with. Only your voice will be able to give voice commands.</span>
+            </div>
+            <div class="input-group">
+                <label>Password</label>
+                <div class="input-field">
+                    <i class="fas fa-lock"></i>
+                    <input type="password" name="password" placeholder="Create your password" autocomplete="new-password">
+                </div>
+            </div>
+
+            <button type="submit" class="btn-primary">
+                <i class="fas fa-user-plus"></i> Create account
+            </button>
+
+            <div class="form-footer">
+                Already have an account?
+                <a href="#" id="gotoLoginLink">Sign in</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Tab switching logic + register/login links -->
+<script>
+    (function() {
+        const tabLoginBtn = document.getElementById('tabLoginBtn');
+        const tabRegisterBtn = document.getElementById('tabRegisterBtn');
+        const loginForm = document.getElementById('loginForm');
+        const registerForm = document.getElementById('registerForm');
+        const gotoRegisterLink = document.getElementById('gotoRegisterLink');
+        const gotoLoginLink = document.getElementById('gotoLoginLink');
+
+        // Function to switch to login view
+        function showLogin() {
+            tabLoginBtn.classList.add('active');
+            tabRegisterBtn.classList.remove('active');
+            loginForm.classList.add('active-form');
+            registerForm.classList.remove('active-form');
+            document.getElementById('loginSide').hidden = false;
+            document.getElementById('registerSide').hidden = true;
+            document.dispatchEvent(new CustomEvent('authtab', { detail: 'login' }));
+        }
+
+        // Function to switch to register view
+        function showRegister() {
+            tabRegisterBtn.classList.add('active');
+            tabLoginBtn.classList.remove('active');
+            registerForm.classList.add('active-form');
+            loginForm.classList.remove('active-form');
+            document.getElementById('loginSide').hidden = true;
+            document.getElementById('registerSide').hidden = false;
+            document.dispatchEvent(new CustomEvent('authtab', { detail: 'register' }));
+        }
+
+        // event listeners on tabs
+        tabLoginBtn.addEventListener('click', showLogin);
+        tabRegisterBtn.addEventListener('click', showRegister);
+
+        // Building the voiceprint takes a few seconds on the server
+        registerForm.addEventListener('submit', function() {
+            const btn = registerForm.querySelector('.btn-primary');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Analysing your voice...';
+        });
+
+        // "Register now" link inside login form -> goes to register
+        if (gotoRegisterLink) {
+            gotoRegisterLink.addEventListener('click', function(e) {
+                e.preventDefault();
+                showRegister();
+            });
+        }
+
+        // "Sign in" link inside register form -> goes to login
+        if (gotoLoginLink) {
+            gotoLoginLink.addEventListener('click', function(e) {
+                e.preventDefault();
+                showLogin();
+            });
+        }
+
+    })();
+
+    // Live camera preview (display only - face verification itself runs on the server)
+    (function() {
+        const video = document.getElementById('cameraPreview');
+        const overlay = document.getElementById('cameraOverlay');
+        const overlayIcon = document.getElementById('cameraOverlayIcon');
+        const overlayText = document.getElementById('cameraOverlayText');
+        const retryBtn = document.getElementById('cameraRetry');
+        const statusDot = document.getElementById('statusDot');
+        const statusText = document.getElementById('cameraStatus');
+        const loginForm = document.getElementById('loginForm');
+        const cameraFrame = document.querySelector('.camera-frame');
+        const capturedStrip = document.getElementById('capturedStrip');
+        const capturedThumb = document.getElementById('capturedThumb');
+        const capturedFull = document.getElementById('capturedFull');
+        const capturedTime = document.getElementById('capturedTime');
+        const capturedToggle = document.getElementById('capturedToggle');
+        let stream = null;
+        let cameraWanted = true;   // false while the Register tab is open
+
+        function setStatus(text, live) {
+            statusText.textContent = text;
+            statusDot.classList.toggle('live', live);
+        }
+
+        function showOverlay(text, canRetry, icon) {
+            overlayIcon.className = 'fas ' + (icon || 'fa-video-slash');
+            overlayText.textContent = text;
+            retryBtn.style.display = canRetry ? '' : 'none';
+            overlay.classList.add('show');
+        }
+
+        async function startCamera() {
+            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                showOverlay('Camera preview needs the page to be opened on localhost / 127.0.0.1.', false);
+                setStatus('Preview unavailable', false);
+                return;
+            }
+            showOverlay('Starting camera...', false, 'fa-video');
+            setStatus('Starting camera...', false);
+            try {
+                stream = await navigator.mediaDevices.getUserMedia({
+                    video: { width: { ideal: 640 }, height: { ideal: 480 } },
+                    audio: false
+                });
+                if (!cameraWanted) { stopCamera(); return; }   // switched tab while the permission prompt was open
+                video.srcObject = stream;
+                overlay.classList.remove('show');
+                setStatus('Live', true);
+            } catch (err) {
+                const denied = err.name === 'NotAllowedError';
+                showOverlay(denied ? 'Camera permission was blocked. Allow it in the browser and try again.'
+                                   : 'Camera not available (' + err.name + ').', true);
+                setStatus('Camera off', false);
+            }
+        }
+
+        function stopCamera() {
+            if (stream) {
+                stream.getTracks().forEach(t => t.stop());
+                stream = null;
+            }
+            video.srcObject = null;
+        }
+
+        retryBtn.addEventListener('click', startCamera);
+
+        // Captured image: after a sign-in attempt the page comes back here, so load the
+        // image the server took for that attempt (if it took one).
+        function toggleCaptured() {
+            const showing = cameraFrame.classList.toggle('show-captured');
+            capturedToggle.textContent = showing ? 'Back to live' : 'View';
+        }
+
+        function loadCapturedImage() {
+            let since = null;
+            try { since = sessionStorage.getItem('faceCheckSince'); } catch (err) {}
+            if (!since) return;
+            const url = '/captured_face?since=' + since + '&t=' + Date.now();
+            const probe = new Image();
+            probe.onload = function() {
+                capturedThumb.src = url;
+                capturedFull.src = url;
+                capturedTime.textContent = 'Sign-in at ' + new Date(Number(since)).toLocaleTimeString();
+                capturedStrip.classList.add('show');
+            };
+            probe.src = url;   // 404 (no new image, e.g. wrong password) -> nothing is shown
+        }
+
+        capturedThumb.addEventListener('click', toggleCaptured);
+        capturedToggle.addEventListener('click', toggleCaptured);
+        loadCapturedImage();
+
+        // The server opens the same webcam for face verification, so the browser
+        // must release it before the login request is sent.
+        loginForm.addEventListener('submit', function(e) {
+            if (!stream) return;
+            e.preventDefault();
+            try { sessionStorage.setItem('faceCheckSince', String(Date.now())); } catch (err) {}
+            stopCamera();
+            showOverlay('Verifying your face...', false, 'fa-user-check');
+            setStatus('Verifying...', false);
+            setTimeout(() => loginForm.submit(), 400);
+        });
+
+        // The camera only runs on the Login tab (released while registering)
+        document.addEventListener('authtab', function(e) {
+            cameraWanted = e.detail === 'login';
+            if (cameraWanted) {
+                if (!stream) startCamera();
+            } else {
+                stopCamera();
+                setStatus('Camera off', false);
+            }
+        });
+
+        window.addEventListener('pagehide', stopCamera);
+        startCamera();
+    })();
+</script>
+
+</body>
+</html>
