@@ -1,0 +1,49 @@
+# Python 3.10 (Windows)
+# Install:  venv\Scripts\python -m pip install -r requirements.txt
+#           venv\Scripts\python -m pip install --force-reinstall --no-deps opencv-contrib-python==4.11.0.86
+#           venv\Scripts\python -m pip install face_recognition==1.3.0 --no-deps
+# (opencv-python and opencv-contrib-python share the cv2 folder; reinstalling contrib last
+#  keeps the full build. face_recognition is installed with --no-deps so pip does not try
+#  to compile dlib; dlib-bin below provides a prebuilt dlib for Windows.
+#  "pip check" will report "face-recognition requires dlib" - this is expected and harmless.)
+
+# Web app
+Flask==3.1.3
+PyMySQL==1.2.3
+
+# Computer vision / hand tracking
+opencv-python==4.11.0.86
+opencv-contrib-python==4.11.0.86
+cvzone==2.0.0
+mediapipe==0.10.35
+numpy==1.26.4
+Pillow==12.3.0
+
+# Face verification
+dlib-bin==19.24.6
+face-recognition-models==0.3.0
+Click==8.4.2
+
+# OCR (also needs Tesseract-OCR installed at C:\Program Files\Tesseract-OCR)
+pytesseract==0.3.13
+
+# Voice control
+SpeechRecognition==3.17.0
+PyAudio==0.2.14
+pyttsx3==2.99
+
+# Speaker verification (only the presenter's voice can give commands).
+# CPU-only torch; the ECAPA model (~80 MB) is downloaded to pretrained_models/ on first use.
+# Also needs ffmpeg on the PATH to read mp3 recordings.
+torch==2.11.0
+torchaudio==2.11.0
+speechbrain==1.1.1
+
+# PowerPoint handling (ppt_splitter needs Microsoft PowerPoint installed)
+pywin32==312
+python-pptx==1.0.2
+
+# PPT summarizer (Gemini)
+google-generativeai==0.3.2
+
+python-dotenv

@@ -1,0 +1,153 @@
+HAND GESTURE GUIDE - Gesture Based PPT Controlling
+==================================================
+
+Finger pattern is written as [Thumb, Index, Middle, Ring, Pinky]
+  1 = finger up, 0 = finger down, x = does not matter (thumb up or down)
+
+The webcam preview (top right of the slide window) shows a YELLOW LINE.
+  - "Above the line" = your hand's center is above the yellow line (face height)
+  - "Below the line" = your hand's center is below the yellow line
+
+
+--------------------------------------------------
+PRESENTER ONLY (several people in front of the camera)
+--------------------------------------------------
+Only the hands of the person whose face matches the reference image
+(owner.jpg by default) are used. In the webcam preview:
+  - green box "PRESENTER" = the matched face; green box on their hand = hand in use
+  - red box "IGNORED"     = other people; their hands are ignored
+  - "Presenter not found" = no gestures work until the presenter faces the camera
+Face recognition runs in the background twice a second, and the presenter
+is remembered for 2 seconds if they turn their head briefly.
+
+
+--------------------------------------------------
+SLIDE NAVIGATION  (hand ABOVE the yellow line)
+--------------------------------------------------
+1. Previous slide ....... [1, 0, 0, 1, 0]  Thumb + Ring finger up
+2. Next slide ........... [1, 0, 0, 0, 1]  Thumb + Pinky up
+   (changing slide clears the drawings on the current slide)
+
+
+--------------------------------------------------
+POINTER / DRAWING  (hand anywhere)
+--------------------------------------------------
+3. Show pointer ......... [x, 1, 1, 0, 0]  Index + Middle up
+                          Shows a red dot on the slide, nothing is drawn.
+
+4. Draw ................. [x, 1, 0, 0, 0]  Index finger only
+                          Draws with the selected COLOR, SHAPE and THICKNESS.
+                          - Free      : draws freely following your finger
+                          - Line      : start point is where you begin,
+                                        the line follows your finger
+                          - Rectangle : start corner is where you begin,
+                                        opposite corner follows your finger
+                          - Circle    : center is where you begin,
+                                        radius follows your finger
+                          - Star      : center is where you begin,
+                                        size follows your finger
+                          Change to any other gesture to finish the shape.
+
+5. Undo .................. [x, 1, 1, 1, 0]  Index + Middle + Ring up
+                          Undoes the last stroke / shape or the last eraser rub.
+
+9. Eraser ............... [x, 0, 0, 0, 0]  Closed fist (all fingers folded)
+                          Works like a real eraser: a grey circle shows the
+                          eraser on the slide, and any drawing it passes over
+                          is rubbed out. Open your hand to stop erasing.
+
+
+10. Screenshot .......... [x, 1, 1, 1, 1]  Open palm (all four fingers up)
+                          Hold it steady until the "Hold: screenshot" bar is full.
+                          Saves the slide WITH your drawings as a PNG in the
+                          "screenshots" folder. Lower your hand before taking
+                          another one.
+
+
+--------------------------------------------------
+TOOL PANEL SELECTION  (hand BELOW the yellow line)
+--------------------------------------------------
+The panel on the right side of the slide window shows the current
+COLOR, SHAPE and THICKNESS (the selected one is highlighted).
+
+Hold the gesture steady for about half a second (10 frames).
+A "Selecting ..." progress bar fills at the bottom of the panel,
+and the selection moves to the NEXT option when it is full.
+
+6. Select COLOR ......... [x, 1, 0, 0, 1]  Index + Pinky up (rock sign)
+                          Cycles: Blue -> Red -> Green
+
+7. Select SHAPE ......... [x, 0, 0, 0, 1]  Pinky only
+                          Cycles: Free (pen) -> Line -> Rectangle -> Circle -> Star
+
+8. Select THICKNESS ..... [x, 0, 1, 1, 1]  Middle + Ring + Pinky up (index folded)
+                          Cycles: 2px -> 4px -> 6px
+
+11. Brightness UP ....... [x, 1, 1, 0, 1]  Index + Middle + Pinky up (ring folded)
+    Brightness DOWN ..... [x, 0, 0, 1, 1]  Ring + Pinky up
+                          Changes the screen brightness by 5 (0-100).
+                          Keep holding to repeat. Works on laptop / built-in
+                          displays (Windows WMI); the new level is shown on the slide.
+
+
+--------------------------------------------------
+VOICE COMMANDS  (work together with the gestures)
+--------------------------------------------------
+Speak clearly; needs a microphone and an internet connection
+(Google speech recognition). The panel shows "Mic: listening"
+and then the last phrase it heard.
+
+"next slide"      - go to the next slide
+"previous slide"  - go to the previous slide (or just "back")
+"screenshot"      - save a screenshot (also "screen shot" / "capture")
+"brightness up"   - screen brightness +5 (also "increase brightness" / "brighter")
+"brightness down" - screen brightness -5 (also "decrease brightness" / "dim" / "darker")
+
+Changing slide by voice also clears the drawings, same as the gesture.
+
+SPEAKER VERIFICATION: only the logged-in presenter's voice is obeyed.
+At registration each user uploads a voice recording (mp3 / wav, read any
+text for 15-30 s). It is turned into a "voiceprint" by a pretrained deep
+learning speaker model (ECAPA-TDNN). Every phrase the microphone hears is
+compared with the presenter's voiceprint; if another person says
+"next slide", the panel shows  Not presenter: "next slide"  and nothing
+happens. The similarity score of every command is printed in the console;
+raise / lower VERIFY_THRESHOLD in speaker_verification.py (default 0.35)
+to make the check stricter / more relaxed.
+Users registered before this feature have no voiceprint: any voice works.
+
+
+--------------------------------------------------
+KEYBOARD SHORTCUTS  (slide window must be focused)
+--------------------------------------------------
+c  - next color
+s  - next shape
+t  - next thickness
+q  - close the presentation
+
+
+==================================================
+AIR DRAWING BOARD  (air_drawing.py)
+==================================================
+White drawing board on the left; panel on the right shows the webcam,
+COLOR / SHAPE / THICKNESS and the RECOGNIZED TEXT. Thumb is ignored.
+
+Index finger only ............ draw (pen or the selected shape)
+Index + Middle ............... move the cursor without drawing (pen up)
+Closed fist .................. eraser (rubs out ink under your palm)
+
+Hold until the orange "Hold" bar is full (change gesture to repeat):
+Index + Middle + Ring ........ undo
+Index + Pinky ................ next color   (Blue -> Red -> Green)
+Pinky only ................... next shape   (Pen -> Line -> Rectangle -> Circle -> Star)
+Middle + Ring + Pinky ........ next thickness (2px -> 4px -> 6px)
+Open palm .................... recognize the handwriting on the board
+                               (text appears in the panel, the recognized
+                               writing is wiped; undo brings it back)
+
+Keys: r recognize | x clear recognized text | c clear board | q quit
+
+Text recognition uses Gemini (needs internet, about 2-3 s) and
+automatically falls back to Tesseract (offline) if Gemini fails.
+Tips: write big, leave clear gaps between words, and use the
+"move" gesture (Index + Middle) between letters / words.
